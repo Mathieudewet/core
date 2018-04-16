@@ -163,6 +163,10 @@ final class ItemNormalizer extends AbstractItemNormalizer
     private function populateRelation(array $data, $object, string $format = null, array $context, array $components, string $type): array
     {
         $key = '_'.$type;
+        $class = new \ReflectionClass($object);
+
+        $data += ['_embeded' => ['_links' => [$class->getShortName() => ['href' => $context['iri']]]]];
+
         foreach ($components[$type] as $relation) {
             $attributeValue = $this->getAttributeValue($object, $relation['name'], $format, $context);
             if (empty($attributeValue)) {
@@ -172,9 +176,9 @@ final class ItemNormalizer extends AbstractItemNormalizer
             if ('one' === $relation['cardinality']) {
                 if ('links' === $type) {
                     $data[$key][$relation['name']]['href'] = $this->getRelationIri($attributeValue);
+                    $data['_embeded'][$key][$relation['name']]['href'] = $attributeValue;
                     continue;
                 }
-
                 $data[$key][$relation['name']] = $attributeValue;
                 continue;
             }
@@ -185,7 +189,6 @@ final class ItemNormalizer extends AbstractItemNormalizer
                 if ('links' === $type) {
                     $rel = ['href' => $this->getRelationIri($rel)];
                 }
-
                 $data[$key][$relation['name']][] = $rel;
             }
         }
