@@ -20,6 +20,7 @@ use ApiPlatform\Core\Api\OperationMethodResolverInterface;
 use ApiPlatform\Core\Api\OperationType;
 use ApiPlatform\Core\Api\ResourceClassResolverInterface;
 use ApiPlatform\Core\Api\UrlGeneratorInterface;
+use ApiPlatform\Core\Bridge\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Core\Documentation\Documentation;
 use ApiPlatform\Core\Exception\ResourceClassNotFoundException;
 use ApiPlatform\Core\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
@@ -29,6 +30,7 @@ use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use ApiPlatform\Core\Metadata\Resource\ResourceMetadata;
 use ApiPlatform\Core\Operation\Factory\SubresourceOperationFactoryInterface;
 use ApiPlatform\Core\PathResolver\OperationPathResolverInterface;
+use ApiPlatform\Core\Serializer\Filter\PropertyFilter;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
@@ -797,6 +799,9 @@ final class DocumentationNormalizer implements NormalizerInterface, CacheableSup
             return [];
         }
 
+        // TODO: prendre tout ceux qui concerne la pagination, virer les autres du tableau, injecter le tableau dans les parameters.
+        dump($resourceMetadata->getAttributes());
+
         $parameters = [];
         $resourceFilters = $resourceMetadata->getCollectionOperationAttribute($operationName, 'filters', [], true);
         foreach ($resourceFilters as $filterId) {
@@ -810,6 +815,14 @@ final class DocumentationNormalizer implements NormalizerInterface, CacheableSup
                     'in' => 'query',
                     'required' => $data['required'],
                 ];
+
+                if ($filter instanceof OrderFilter) {
+                    $parameter['type'] = "string";
+                    $parameter['enum'] = [
+                        "asc",
+                        "desc"
+                    ];
+                }
 
                 $type = $this->getType($v3, $data['type'], $data['is_collection'] ?? false, null, null, $definitions, $serializerContext);
                 $v3 ? $parameter['schema'] = $type : $parameter += $type;
